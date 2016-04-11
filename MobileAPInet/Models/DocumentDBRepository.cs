@@ -10,6 +10,8 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using System.Net;
 using System.Collections;
+using MobileAPInet.Models;
+
 
 namespace MobileAPInet.Models
 {
@@ -70,7 +72,7 @@ namespace MobileAPInet.Models
         {
             FeedResponse<dynamic> docs = await client.ReadDocumentFeedAsync(UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), new FeedOptions { MaxItemCount = 10 });
 
-            List<String> results = new List<String>();
+            List<string> results = new List<string>();
             foreach (var d in docs)
             {
                 results.Add(d.ToString());
@@ -78,23 +80,23 @@ namespace MobileAPInet.Models
 
             return results;
         }
-        //public static async Task<Document> CreateItemAsync(T item)
-        //{
-        //    return await client.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), item);
-        //}
-        //public static async Task<Document> UpdateItemAsync(string id, T item)
-        //{
-        //    return await client.ReplaceDocumentAsync(UriFactory.CreateDocumentUri(DatabaseId, CollectionId, id), item);
-        //}
+        public static async Task<Document> CreateItemAsync(object item)
+        {
+            return await client.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), item);
+        }
+        public static async Task<Document> UpdateItemAsync(string id, string item)
+        {
+            return await client.ReplaceDocumentAsync(UriFactory.CreateDocumentUri(DatabaseId, CollectionId, id), item);
+        }
 
-        public static async Task<String> GetItem(string id)
+        public static async Task<Document> GetItem(string id)
         {
             try
             {
                 Document document = await client.ReadDocumentAsync(UriFactory.CreateDocumentUri(DatabaseId, CollectionId, id));
-                
+                return document;
                 //return (T)(dynamic)document;
-                return (String)(dynamic)document.ToString() ;
+                //return (String)(dynamic)document.ToString() ;
             }
             catch (DocumentClientException e)
             {

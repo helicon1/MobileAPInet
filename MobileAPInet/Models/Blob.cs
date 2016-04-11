@@ -78,7 +78,7 @@ namespace MobileAPInet.Models
             CloudBlockBlob blockBlob = Container.GetBlockBlobReference(String.Format("image{0}.jpg", ImageId));
             await blockBlob.UploadFromStreamAsync(await Request.Content.ReadAsStreamAsync());
             var baseUri = string.Format("{0}://{1}:{2}", Request.RequestUri.Scheme, Request.RequestUri.Host, Request.RequestUri.Port);
-            response.Headers.Location = new Uri(string.Format("{0}/productimages/{1}", baseUri, ImageId));
+            response.Headers.Location = new Uri(string.Format("{0}/images/{1}", baseUri, ImageId));
             response.StatusCode = HttpStatusCode.OK;
             return response;
         }

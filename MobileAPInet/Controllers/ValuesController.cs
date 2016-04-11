@@ -8,6 +8,7 @@ using MobileAPInet.App;
 using System.Threading.Tasks;
 using MobileAPInet.Models;
 using System.Configuration;
+using Microsoft.Azure.Documents;
 
 namespace MobileAPInet.Controllers
 {
@@ -51,7 +52,7 @@ namespace MobileAPInet.Controllers
             {
                 return Request.CreateResponse(HttpStatusCode.BadRequest);
             }
-            String item = await DocumentDBRepository.GetItem(id);
+            Document item = await DocumentDBRepository.GetItem(id);
             //String item = await DocumentDBRepository.GetItemAsync(id);
             if (item == null)
             {
@@ -82,32 +83,57 @@ namespace MobileAPInet.Controllers
             r.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
             return r;
         }
+        [HttpPost]
+        [Route("form")]
+        public async Task<HttpResponseMessage> Post(FormDocument form)
+        {
+            DocumentDBRepository.Initialize();
+            Document doc;
+            try {
+                doc = await DocumentDBRepository.CreateItemAsync(form);
+            }
+            catch  {
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
+
+            }
+
+            HttpResponseMessage r = Request.CreateResponse(HttpStatusCode.OK, doc.Id );
+            r.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+            return r;
+        }
     }
         public class HelloWorldController : ApiController
     {
         [HttpGet]
         [Route("HelloWorld({id})")]
-        public String Get(int id)
+        public HttpResponseMessage Get(int id)
         {
+            string outstr;
             switch (id)
             {
                 case 1:
-                    return "Hello Azure";
+                    outstr =  "Hello from Azure API";
+                    break;
                 case 2:
-                    return "ITS";
+                    outstr = "ITS";
+                    break;
                 default:
-                    return "Mobile API Service";
+                    outstr = "Mobile API Service";
+                    break;
             }
-                
 
-            //return new string[] { "XX", "XX" };
+            HttpResponseMessage r = Request.CreateResponse(HttpStatusCode.OK, outstr  );
+            r.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+            return r;
         }
 
         [HttpGet]
         [Route("HelloWorld")]
-        public String Get()
+        public HttpResponseMessage Get()
         {
-            return "xx";
+            HttpResponseMessage r = Request.CreateResponse(HttpStatusCode.OK, "Hello World");
+            r.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+            return r;
         }
 
         // POST api/values
