@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Collections;
 using MobileAPInet.Models;
-
+using System.IO;
 
 namespace MobileAPInet.Models
 {
@@ -83,6 +83,21 @@ namespace MobileAPInet.Models
         public static async Task<Document> CreateItemAsync(object item)
         {
             return await client.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), item);
+        }
+        private static MemoryStream GenerateStreamFromString(string s)
+        {
+            MemoryStream stream = new MemoryStream();
+            StreamWriter writer = new StreamWriter(stream);
+            writer.Write(s);
+            writer.Flush();
+            stream.Position = 0;
+            return stream;
+        }
+        public static async Task<Document> CreateItemAsync(string js)
+        {
+            //Stream s = GenerateStreamFromString(js);
+            //JsonSerializable.LoadFrom<MemoryStream>(s);
+            return await client.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), js );
         }
         public static async Task<Document> UpdateItemAsync(string id, string item)
         {

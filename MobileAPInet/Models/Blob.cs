@@ -75,6 +75,7 @@ namespace MobileAPInet.Models
         {
             BlobHelper Container = new BlobHelper();
             var response = new HttpResponseMessage();
+            //TODO CHange refernce to reflect media type by using the prefix fo content type header
             CloudBlockBlob blockBlob = Container.GetBlockBlobReference(String.Format("image{0}.jpg", ImageId));
             await blockBlob.UploadFromStreamAsync(await Request.Content.ReadAsStreamAsync());
             var baseUri = string.Format("{0}://{1}:{2}", Request.RequestUri.Scheme, Request.RequestUri.Host, Request.RequestUri.Port);

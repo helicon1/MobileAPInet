@@ -19,7 +19,11 @@ namespace MobileAPInet.Models
         [JsonProperty(PropertyName = "status")]
         public string status { get; set; }
         [JsonProperty(PropertyName = "data")]
-        public string formData { get; set; }
+        public string data { get; set; }
     }
-
+    public class fdata
+    {
+        [JsonProperty(PropertyName = "data")]
+        public object data { get; set; }
+    }
 }

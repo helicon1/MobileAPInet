@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using MobileAPInet.Models;
 using System.Configuration;
 using Microsoft.Azure.Documents;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace MobileAPInet.Controllers
 {
@@ -85,11 +87,25 @@ namespace MobileAPInet.Controllers
         }
         [HttpPost]
         [Route("form")]
-        public async Task<HttpResponseMessage> Post(FormDocument form)
+        public async Task<HttpResponseMessage> Post([FromBody]JToken jsonbody)//[FromBody] FormDocument form) //FormDocument form)
         {
+            //FormDocument form = new FormDocument();    
             DocumentDBRepository.Initialize();
             Document doc;
+            //string c = await Request.Content.ReadAsStringAsync();
+            //Console.Write(c);
+            JTokenReader jtReader= new JTokenReader(jsonbody);
+            dynamic form = JObject.Parse(jsonbody.ToString());
+            //form.LoadFrom(jtReader);
+            //form.formType = jsonbody.Value<string>("ftype");
+            //form.formVersion = jsonbody.Value<string>("ver");
+            form.timeStamp = DateTime.Now;
+            //form.data = jsonbody.Value<string>("data");
+            form.creator = Request.GetRequestContext().Principal.Identity.Name;
+            form.status = ConfigurationManager.AppSettings["defaultStatus"];
+            
             try {
+                //doc = await DocumentDBRepository.CreateItemAsync(jsonbody);
                 doc = await DocumentDBRepository.CreateItemAsync(form);
             }
             catch  {
@@ -151,6 +167,68 @@ namespace MobileAPInet.Controllers
         {
         }
     }
+    public class AttachmentController : ApiController
+    {
+        //    https://azure.microsoft.com/en-us/documentation/articles/best-practices-api-implementation/
+        [HttpGet]
+        [Route("form({formId}/attachment({attachId})")]
+        public IHttpActionResult Get(String formId, string attachId)
+        {
+            try
+            {
+                //var container = ConnectToBlobContainer(ConfigurationManager.AppSettings["Container"]);
+
+                //if (!BlobExists(container, string.Format("image{0}.jpg", id)))
+                //{
+                //    return NotFound();
+                //}
+                //else
+                //{
+                //TODO Get attachment location from form document
+                //TODO Retrieve attachment from database
+                return new FileDownloadResult()
+                {
+                    //Container = container,
+                    ImageId = id
+                };
+                //}
+            }
+            catch
+            {
+                return InternalServerError();
+            }
+        }
+
+        [HttpPost]
+        [Route("form({formId}/attachment")]
+        public async Task<IHttpActionResult> Post(string formId)
+        {
+            try
+            {
+                //TODO Enable all media but ensure its a file of some type
+                if (!Request.Content.Headers.ContentType.MediaType.Equals("image/jpeg"))
+                {
+                    return StatusCode(HttpStatusCode.UnsupportedMediaType);
+                }
+                else
+                {
+                    var id = new Random().Next().ToString(); // Use a random int as the key for the new resource. Should probably check that this key has not already been used
+                    //var container = ConnectToBlobContainer(Constants.PRODUCTIMAGESCONTAINERNAME);
+                    return new FileUploadResult()
+                    {
+                        //Container = container,
+                        ImageId = id,
+                        Request = Request
+                    };
+                    //TODO post attachement to Document DB
+                }
+            }
+            catch
+            {
+                return InternalServerError();
+            }
+        }
+    }
     public class ProductImagesController : ApiController
     {
         //    https://azure.microsoft.com/en-us/documentation/articles/best-practices-api-implementation/
@@ -187,6 +265,7 @@ namespace MobileAPInet.Controllers
         {
             try
             {
+                //TODO Enable all media but ensure its a file of some type
                 if (!Request.Content.Headers.ContentType.MediaType.Equals("image/jpeg"))
                 {
                     return StatusCode(HttpStatusCode.UnsupportedMediaType);
