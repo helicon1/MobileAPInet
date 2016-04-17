@@ -68,14 +68,14 @@ namespace MobileAPInet.Models
                 }
             }
         }
-        public static async Task<IEnumerable> GetAllItems()
+        public static async Task<List<Document>> GetAllItems()
         {
             FeedResponse<dynamic> docs = await client.ReadDocumentFeedAsync(UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), new FeedOptions { MaxItemCount = 10 });
 
-            List<string> results = new List<string>();
+            List<Document> results = new List<Document>();
             foreach (var d in docs)
             {
-                results.Add(d.ToString());
+                results.Add((Document)d);
             }
 
             return results;
@@ -98,6 +98,43 @@ namespace MobileAPInet.Models
             //Stream s = GenerateStreamFromString(js);
             //JsonSerializable.LoadFrom<MemoryStream>(s);
             return await client.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), js );
+        }
+        public static async Task<Attachment> CreateAttachmentAsync(string id, object attachment)
+        {
+            Document d = await client.ReadDocumentAsync(UriFactory.CreateDocumentUri(DatabaseId, CollectionId, id));
+            Attachment a = await client.CreateAttachmentAsync(d.SelfLink, attachment);
+            return a;
+
+        }
+        public static async Task<Attachment> GetAttachment(string formId, string attachId)
+        {
+            Document d = await client.ReadDocumentAsync(UriFactory.CreateDocumentUri(DatabaseId, CollectionId, formId));
+            Attachment a = await client.ReadAttachmentAsync(UriFactory.CreateAttachmentUri(DatabaseId, CollectionId, formId, attachId));
+            
+            return a;
+
+        }
+        //Return FeedResponse as list of attachments
+        public static async Task<List<AttachmentItem>> GetAttachmentList(string id)
+        {
+            Document d = await client.ReadDocumentAsync(UriFactory.CreateDocumentUri(DatabaseId, CollectionId, id));
+            FeedResponse<Attachment> fr = await client.ReadAttachmentFeedAsync(d.AttachmentsLink);
+            List<AttachmentItem> attachmentList = new List<AttachmentItem>();
+            AttachmentItem item;
+            foreach (Attachment att in fr)
+            {
+                item = (AttachmentItem)att;
+                
+                attachmentList.Add(item);
+            }
+            return attachmentList;
+        }
+        public static async Task<Attachment> CreateAttachmentAsyncInDocDB(string id, Stream attStream, MediaOptions mediaOpts )
+        {
+            Document d = await client.ReadDocumentAsync(UriFactory.CreateDocumentUri(DatabaseId, CollectionId, id));
+            Attachment a = await client.CreateAttachmentAsync(d.AttachmentsLink, attStream, mediaOpts );
+            return a;
+
         }
         public static async Task<Document> UpdateItemAsync(string id, string item)
         {

@@ -11,6 +11,8 @@ using System.Configuration;
 using Microsoft.Azure.Documents;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Microsoft.Azure.Documents.Client;
+using System.IO;
 
 namespace MobileAPInet.Controllers
 {
@@ -170,58 +172,88 @@ namespace MobileAPInet.Controllers
     public class AttachmentController : ApiController
     {
         //    https://azure.microsoft.com/en-us/documentation/articles/best-practices-api-implementation/
+
+        
         [HttpGet]
-        [Route("form({formId}/attachment({attachId})")]
-        public IHttpActionResult Get(String formId, string attachId)
+        [Route("form({formId})/attachment({attachId})")]
+        public async Task<IHttpActionResult> GetAttachment(String formId, string attachId)
         {
             try
             {
-                //var container = ConnectToBlobContainer(ConfigurationManager.AppSettings["Container"]);
+                DocumentDBRepository.Initialize();
+                //Retrieve the attachment
+                Attachment a = await DocumentDBRepository.GetAttachment(formId, attachId);
 
-                //if (!BlobExists(container, string.Format("image{0}.jpg", id)))
-                //{
-                //    return NotFound();
-                //}
-                //else
-                //{
-                //TODO Get attachment location from form document
-                //TODO Retrieve attachment from database
-                return new FileDownloadResult()
+                //Retrieve the blob
+                return new FileDownload()
                 {
-                    //Container = container,
-                    ImageId = id
+                    blobId = a.GetPropertyValue<string>("blobId"),
+                    contentType = a.ContentType
                 };
-                //}
             }
             catch
             {
                 return InternalServerError();
             }
         }
+        [HttpGet]
+        [Route("form({formId})/attachment")]
+        public async Task<HttpResponseMessage> GetAttachmentList(string formId)
+        {
+            try
+            {
+                DocumentDBRepository.Initialize();
+                List<AttachmentItem> list = await DocumentDBRepository.GetAttachmentList(formId);
+                HttpResponseMessage r =  Request.CreateResponse(HttpStatusCode.OK, list);
+                r.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+                return r;
+            }
+            catch
+            {
+                return Request.CreateResponse(HttpStatusCode.InternalServerError);
+            }
+        }
 
+        //multipart with one or more files
         [HttpPost]
-        [Route("form({formId}/attachment")]
+        [Route("form({formId})/attachment")]
         public async Task<IHttpActionResult> Post(string formId)
         {
             try
             {
-                //TODO Enable all media but ensure its a file of some type
-                if (!Request.Content.Headers.ContentType.MediaType.Equals("image/jpeg"))
+                // to create in BLOB...
+
+                return new FileUpload()
                 {
-                    return StatusCode(HttpStatusCode.UnsupportedMediaType);
-                }
-                else
-                {
-                    var id = new Random().Next().ToString(); // Use a random int as the key for the new resource. Should probably check that this key has not already been used
-                    //var container = ConnectToBlobContainer(Constants.PRODUCTIMAGESCONTAINERNAME);
-                    return new FileUploadResult()
-                    {
-                        //Container = container,
-                        ImageId = id,
-                        Request = Request
-                    };
-                    //TODO post attachement to Document DB
-                }
+                    //Container = container,
+                    formID = formId,
+                    Request = Request
+                };
+
+                //To create in DocDB 
+                //DocumentDBRepository.Initialize();
+                //string contentType = Request.Content.Headers.ContentType.MediaType; //ContentDisposition.DispositionType;
+                //string extension = Apache.getExtension(contentType);
+                //if (extension.Length == 0)
+                //{
+                //    return Request.CreateResponse(HttpStatusCode.UnsupportedMediaType);
+                //}
+                ////string fname = System.Guid.NewGuid().ToString();
+                ////CloudBlockBlob blockBlob = Container.GetBlockBlobReference(String.Format("{0}/{1}.{2}", formID, fname, extension));
+                ////await blockBlob.UploadFromStreamAsync(await Request.Content.ReadAsStreamAsync());
+
+                //Attachment att = new Attachment { MediaLink = blockBlob.Uri.ToString(), ContentType = contentType, Id = fname };
+                //MediaOptions mOpts = new MediaOptions();
+                //mOpts.ContentType = contentType;
+                //await DocumentDBRepository.CreateAttachmentAsyncInDocDB(formID,Request.Content.ReadAsStreamAsync(),mOpts);
+                ////set contetn type to return json
+                //var response = new HttpResponseMessage();
+                //response = Request.CreateResponse(HttpStatusCode.OK, att);
+                //response.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+                //return response;
+                //TODO post attachement to Document DB
+
+                //}
             }
             catch
             {
